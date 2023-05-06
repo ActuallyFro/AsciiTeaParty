@@ -4,6 +4,13 @@ AsciiDoctor is AWFUL to "just use"... this aims to fix that.
 
 (aka: I'm jaming everything into a Docker container in Gitea, and hoping the pipeline pushes out useful things on the backend)
 
+
+TODO - To make this "really work"
+---------------------------------
+1. [ ] - Make the Docker container - For Support Software (AsciiDoctor, etc)
+2. [ ] - Make the Docker container work with Gitea (sources support software image)
+3. [ ] - Make the Docker container work with Gitea/ACT-Runner (sources support software image)
+
 R&D into Gitea Actions (w/ Runners)
 -----------------------------------
 Source: https://blog.gitea.io/2023/03/hacking-on-gitea-actions/
