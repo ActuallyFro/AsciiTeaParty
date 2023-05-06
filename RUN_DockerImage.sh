@@ -6,6 +6,7 @@ imageName="asciiteaparty"
 VersionTag="v1_gitea1-19-0"
 
 isInteractive="FALSE"
+isRoot="FALSE"
 
 check_status_running() {
     sudo docker ps | grep "$CONTAINER_NAME"
@@ -38,14 +39,15 @@ if [ "$1" == "--help" ]; then
   echo "Usage: $0 [OPTIONS]"
   echo ""
   echo "Options:"
-  echo "  --logs         Display logs for the $CONTAINER_NAME container"
-  echo "  --status       Show the running status of the $CONTAINER_NAME container"
-  echo "  --remove       Remove the $CONTAINER_NAME Docker container if not running"
-  echo "  --help         Print this help message and exit"
-  echo "  --stop         Stop the $CONTAINER_NAME container if it's running"
-  echo "  --interactive  Start interactive mode"
-  echo "  --list         Show $CONTAINER_NAME containers on this machine"
-  echo "  --list-all     Show ALL containers on this machine"
+  echo "  --logs              Display logs for the $CONTAINER_NAME container"
+  echo "  --status            Show the running status of the $CONTAINER_NAME container"
+  echo "  --remove            Remove the $CONTAINER_NAME Docker container if not running"
+  echo "  --help              Print this help message and exit"
+  echo "  --stop              Stop the $CONTAINER_NAME container if it's running"
+  echo "  --interactive       Start interactive mode"
+  echo "  --interactive-root  Start interactive mode"
+  echo "  --list              Show $CONTAINER_NAME containers on this machine"
+  echo "  --list-all          Show ALL containers on this machine"
   echo ""
   echo "Example:"
   echo "  $0 --logs"
@@ -99,6 +101,12 @@ elif [ "$1" == "--interactive" ]; then
     echo "[DEBUG] Starting interactive mode"
     isInteractive="TRUE"
 
+
+elif [ "$1" == "--interactive-root" ]; then
+    echo "[DEBUG] Starting interactive mode"
+    isInteractive="TRUE"
+    isRoot="TRUE"
+
 elif [ "$1" == "--list" ]; then
     print_containers
     exit 0
@@ -138,7 +146,11 @@ else
 fi
 
 if [ "$isInteractive" == "TRUE" ]; then
-    sudo docker exec -it $CONTAINER_NAME /bin/bash
+    if [ "$isRoot" == "TRUE" ]; then
+        sudo docker exec -it --user root $CONTAINER_NAME /bin/bash
+    else
+        sudo docker exec -it $CONTAINER_NAME /bin/bash
+    fi
 fi
 
 #Run with data volume on host, idea:
