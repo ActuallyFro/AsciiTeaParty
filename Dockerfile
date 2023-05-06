@@ -1,4 +1,5 @@
 # Use Gitea 1.19.0 as base image
+# https://hub.docker.com/r/gitea/gitea/tags?page=1&ordering=last_updated&name=1.19.0
 FROM gitea/gitea:1.19.0
 
 USER root
