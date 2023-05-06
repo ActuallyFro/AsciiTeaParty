@@ -92,7 +92,7 @@ elif [ "$1" == "--stop" ]; then
         echo "Container ($CONTAINER_NAME) is not running."
     else
         echo "Container ($CONTAINER_NAME) is running...stopping"
-        sudo docker stop $CONTAINER_NAME
+        sudo docker stop $CONTAINER_NAME > /dev/null
         print_status_running
     fi
     exit 0
@@ -100,7 +100,6 @@ elif [ "$1" == "--stop" ]; then
 elif [ "$1" == "--interactive" ]; then
     echo "[DEBUG] Starting interactive mode"
     isInteractive="TRUE"
-
 
 elif [ "$1" == "--interactive-root" ]; then
     echo "[DEBUG] Starting interactive mode"
@@ -110,7 +109,6 @@ elif [ "$1" == "--interactive-root" ]; then
 elif [ "$1" == "--list" ]; then
     print_containers
     exit 0
-
 
 elif [ "$1" == "--list-all" ]; then
     print_system_containers
@@ -128,16 +126,17 @@ CONTAINER_RUNNING=$(check_status_running)
 if [ -z "$CONTAINER_EXISTS" ]; then
     echo "Starting new container..."
 
-    if [ "$isInteractive" == "TRUE" ]; then
-        sudo docker run -it --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag /bin/bash
-    else
-        sudo docker run -d --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag
-    fi
+    sudo docker run -d --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag
+
+    #WHAT THE HELL DOCKER...
+    sudo docker exec -d $CONTAINER_NAME --user root chown -R git:git /data
+    #The /data folder will NOT accept permission changes while the image is being built.
 
 elif [ -z "$CONTAINER_RUNNING" ]; then
     echo "Starting existing container..."
 
-    sudo docker start $CONTAINER_NAME
+    sudo docker start $CONTAINER_NAME > /dev/null
+    print_status_running
 
 else
     if [ "$isInteractive" == "FALSE" ]; then
