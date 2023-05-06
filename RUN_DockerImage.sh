@@ -21,6 +21,15 @@ check_status_exists() {
     sudo docker ps -a | grep "$CONTAINER_NAME"
 }
 
+
+check_status_runner_running() {
+    sudo docker ps | grep "$CONTAINER_RUNNER_NAME"
+}
+
+check_status_runner_exists() {
+    sudo docker ps -a | grep "$CONTAINER_RUNNER_NAME"
+}
+
 print_status_running(){
     CONTAINER_RUNNING=$(check_status_running)
 
@@ -53,6 +62,7 @@ if [ "$1" == "--help" ]; then
   echo "  --interactive-root  Start interactive mode"
   echo "  --list              Show $CONTAINER_NAME containers on this machine"
   echo "  --list-all          Show ALL containers on this machine"
+  echo "  --runner            Start the $CONTAINER_RUNNER_NAME container"
   echo ""
   echo "Example:"
   echo "  $0 --logs"
@@ -119,6 +129,10 @@ elif [ "$1" == "--list-all" ]; then
     print_system_containers
     exit 0
 
+elif [ "$1" == "--runner" ]; then
+    echo "Starting Gitea runner!"
+    isRunnerBuild="TRUE"
+
 else
     if [ ! -z "$1" ]; then
         echo "[ERROR] Unknown flag '$1'"
@@ -128,34 +142,71 @@ fi
 
 CONTAINER_EXISTS=$(check_status_exists)
 CONTAINER_RUNNING=$(check_status_running)
-if [ -z "$CONTAINER_EXISTS" ]; then
-    echo "Starting new container..."
 
-    sudo docker run -d --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag
+CONTAINER_RUNNER_EXISTS=$(check_status_runner_exists)
+CONTAINER_RUNNER_RUNNING=$(check_status_runner_running)
 
-    #WHAT THE HELL DOCKER...
-    sudo docker exec -u root -d $CONTAINER_NAME chown -R git:git /data
-    #The /data folder will NOT accept permission changes while the image is being built.
+# if NOT runner
+if [ "$isRunnerBuild" == "FALSE" ]; then
+    if [ -z "$CONTAINER_EXISTS" ]; then
+        echo "Starting new container..."
 
-elif [ -z "$CONTAINER_RUNNING" ]; then
-    echo "Starting existing container..."
+        sudo docker run -d --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag
 
-    sudo docker start $CONTAINER_NAME > /dev/null
-    print_status_running
+        #WHAT THE HELL DOCKER...
+        sudo docker exec -u root -d $CONTAINER_NAME chown -R git:git /data
+        #The /data folder will NOT accept permission changes while the image is being built.
 
-else
-    if [ "$isInteractive" == "FALSE" ]; then
-        echo "Container is already running."
-    fi
-fi
+    elif [ -z "$CONTAINER_RUNNING" ]; then
+        echo "Starting existing container..."
 
-if [ "$isInteractive" == "TRUE" ]; then
-    if [ "$isRoot" == "TRUE" ]; then
-        sudo docker exec -it --user root $CONTAINER_NAME /bin/bash
+        sudo docker start $CONTAINER_NAME > /dev/null
+        print_status_running
+
     else
-        sudo docker exec -it $CONTAINER_NAME /bin/bash
+        if [ "$isInteractive" == "FALSE" ]; then
+            echo "Container is already running."
+        fi
+    fi
+
+    if [ "$isInteractive" == "TRUE" ]; then
+        if [ "$isRoot" == "TRUE" ]; then
+            sudo docker exec -it --user root $CONTAINER_NAME /bin/bash
+        else
+            sudo docker exec -it $CONTAINER_NAME /bin/bash
+        fi
+    fi
+else
+    if [ -z "$CONTAINER_RUNNER_EXISTS" ]; then
+        echo "Starting new container..."
+
+        sudo docker run -d --name $CONTAINER_RUNNER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageRunnerName:$VersionRunnerTag
+
+        #WHAT THE HELL DOCKER...
+        sudo docker exec -u root -d $CONTAINER_RUNNER_NAME chown -R git:git /data
+        #The /data folder will NOT accept permission changes while the image is being built.
+
+    elif [ -z "$CONTAINER_RUNNER_RUNNING" ]; then
+        echo "Starting existing container..."
+
+        sudo docker start $CONTAINER_RUNNER_NAME > /dev/null
+        print_status_running
+
+    else
+        if [ "$isInteractive" == "FALSE" ]; then
+            echo "Container is already running."
+        fi
+    fi
+
+    if [ "$isInteractive" == "TRUE" ]; then
+        if [ "$isRoot" == "TRUE" ]; then
+            sudo docker exec -it --user root $CONTAINER_RUNNER_NAME /bin/bash
+        else
+            sudo docker exec -it $CONTAINER_RUNNER_NAME /bin/bash
+        fi
     fi
 fi
+
 
 #Run with data volume on host, idea:
 #mkdir gitea-data
