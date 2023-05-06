@@ -109,8 +109,10 @@ elif [ "$1" == "--list-all" ]; then
     exit 0
 
 else
-    echo "[ERROR] Unknown flag '$1'"
-    exit 1
+    if [ ! -z "$1" ]; then
+        echo "[ERROR] Unknown flag '$1'"
+        exit 1
+    fi
 fi
 
 CONTAINER_EXISTS=$(check_status_exists)
