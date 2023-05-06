@@ -40,3 +40,6 @@ CMD ["web"]
 # 1) sudo docker pull mariadb:latest
 # 2) sudo docker run -d --name mariadb -e MYSQL_ROOT_PASSWORD=my-secret-pw -e MYSQL_DATABASE=gitea -e MYSQL_USER=gitea -e MYSQL_PASSWORD=gitea-secret-pw mariadb:latest
 # 3) sudo docker run -d --name AsciiTeaParty --link mariadb:mariadb -p 3000:3000 -p 22:22 asciiteaparty:v1_gitea1-19-0
+
+#To Run?
+#docker run -d -p 222:22 -p 3000:3000 -v ./data:/app/gitea/data --name gitea_container your_image_name
