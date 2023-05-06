@@ -5,61 +5,103 @@ CONTAINER_NAME="AsciiTeaParty"
 imageName="asciiteaparty"
 VersionTag="v1_gitea1-19-0"
 
+isInteractive="FALSE"
 
-# Function to check container status
-check_status() {
-    CONTAINER_RUNNING=$(sudo docker ps | grep "^${CONTAINER_NAME}$")
+check_status_running() {
+    sudo docker ps | grep "$CONTAINER_NAME"
+}
+
+check_status_exists() {
+    sudo docker ps -a | grep "$CONTAINER_NAME"
+}
+
+print_status_running(){
+    CONTAINER_RUNNING=$(check_status_running)
+
     if [ -z "$CONTAINER_RUNNING" ]; then
         echo "Container ($CONTAINER_NAME) is not running."
     else
         echo "Container ($CONTAINER_NAME) is running."
     fi
+
 }
 
-# Print help, then quit
 if [ "$1" == "--help" ]; then
   echo "--logs - Reports running status"
   echo "--status - Shows logs for a container"
   echo "--remove - Removes the $CONTAINER_NAME Docker container"
   echo "--help - Prints this message"
+  echo "--stop - Stops the container"
   exit 0
-fi
 
-if [ "$1" == "--logs" ]; then
+elif [ "$1" == "--logs" ]; then
   sudo docker logs $CONTAINER_NAME
   exit 0
-fi
 
-# Check if the --status flag is provided
-if [ "$1" == "--status" ]; then
-    check_status
+elif [ "$1" == "--status" ]; then
+    print_status_running
     exit 0
-fi
 
-# Remove image?
-if [ "$1" == "--remove" ]; then
-    echo "Original Containers List"
-    sudo docker rm $CONTAINER_NAME
-    echo ""
-    echo "Removed Container List"
-    sudo docker ps -a
+elif [ "$1" == "--remove" ]; then
+    CONTAINER_RUNNING=$(check_status_running)
+
+    if [ -z "$CONTAINER_RUNNING" ]; then
+        echo "Container ($CONTAINER_NAME) is not running... removing"
+        echo "Original Containers List"
+        sudo docker rm $CONTAINER_NAME
+        echo ""
+        echo "Removed Container List"
+        sudo docker ps -a
+    else
+        echo "Container ($CONTAINER_NAME) is running. NOT REMOVING! --stop first!"
+    fi
+    
     exit 0
+
+elif [ "$1" == "--stop" ]; then
+    CONTAINER_RUNNING=$(check_status_running)
+
+    if [ -z "$CONTAINER_RUNNING" ]; then
+        echo "Container ($CONTAINER_NAME) is not running."
+    else
+        echo "Container ($CONTAINER_NAME) is running...stopping"
+        sudo docker stop $CONTAINER_NAME
+        print_status_running
+    fi
+    exit 0
+
+elif [ "$1" == "--interactive" ]; then
+    echo "[DEBUG] Starting interactive mode"
+    isInteractive="TRUE"
+
+else
+    echo "[ERROR] Unknown flag '$1'"
+    exit 1
 fi
 
-
-# Check if the container exists
-CONTAINER_EXISTS=$(sudo docker ps -a | grep "^${CONTAINER_NAME}$")
-
+CONTAINER_EXISTS=$(check_status_exists)
+CONTAINER_RUNNING=$(check_status_running)
 if [ -z "$CONTAINER_EXISTS" ]; then
-    # If the container does not exist, create and run it
     echo "Starting new container..."
-    sudo docker run -d --name $CONTAINER_NAME -p 3000:3000 -p 22:22 $imageName:$VersionTag
+
+    if [ "$isInteractive" == "TRUE" ]; then
+        sudo docker run -it --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag /bin/bash
+    else
+        sudo docker run -d --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag
+    fi
 
 elif [ -z "$CONTAINER_RUNNING" ]; then
-    # If the container exists but is not running, start it
     echo "Starting existing container..."
+
     sudo docker start $CONTAINER_NAME
+
 else
-    # If the container is already running, show a message
-    echo "Container is already running."
+    if [ "$isInteractive" == "FALSE" ]; then
+        echo "Container is already running."
+    fi
 fi
+
+if [ "$isInteractive" == "TRUE" ]; then
+    sudo docker exec -it $CONTAINER_NAME /bin/bash
+fi
+
