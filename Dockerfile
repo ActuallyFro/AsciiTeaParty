@@ -14,7 +14,6 @@ RUN apk add --no-cache \
     ttf-dejavu \
     wget
 
-# Install Asciidoctor, Asciidoctor-PDF, and Asciidoctor-Diagram
 RUN gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram
 
 # Install PlantUML
@@ -24,22 +23,15 @@ RUN wget "https://github.com/plantuml/plantuml/releases/download/v1.2023.6/plant
     echo -e '#!/bin/sh\njava -jar /usr/local/bin/plantuml.jar "$@"' > /usr/local/bin/plantuml && \
     chmod +x /usr/local/bin/plantuml
 
-# Copy custom configuration file
 COPY custom/app.ini /data/gitea/conf/app.ini
 
-# Expose Gitea ports
 EXPOSE 22 3000
 
-# # Create a non-root user and switch to that user
-# RUN adduser -D -u 1000 giteauser
-# # IF not using docker-compose, uncomment the following lines:
-# # Create the /data/gitea directory and set the ownership
 # USER root
-# RUN mkdir -p /app/gitea/data && chown -R giteauser:giteauser /app/gitea/data
+RUN mkdir -p /app/gitea/data && chown -R git:git /app/gitea/data
 
-#USER giteauser
+#USER git
 
-# Set entrypoint for Gitea
 ENTRYPOINT ["/usr/local/bin/gitea"]
 CMD ["web"]
 
