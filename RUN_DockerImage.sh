@@ -2,20 +2,33 @@
 
 CONTAINER_NAME="AsciiTeaParty"
 
+imageName="asciiteaparty"
+VersionTag="v1_gitea1-19-0"
 
-#!/bin/bash
-
-CONTAINER_NAME="gitea"
 
 # Function to check container status
 check_status() {
-    CONTAINER_RUNNING=$(sudo docker ps --format '{{.Names}}' | grep "^${CONTAINER_NAME}$")
+    CONTAINER_RUNNING=$(sudo docker ps | grep "^${CONTAINER_NAME}$")
     if [ -z "$CONTAINER_RUNNING" ]; then
-        echo "Container is not running."
+        echo "Container ($CONTAINER_NAME) is not running."
     else
-        echo "Container is running."
+        echo "Container ($CONTAINER_NAME) is running."
     fi
 }
+
+# Print help, then quit
+if [ "$1" == "--help" ]; then
+  echo "--logs - Reports running status"
+  echo "--status - Shows logs for a container"
+  echo "--remove - Removes the $CONTAINER_NAME Docker container"
+  echo "--help - Prints this message"
+  exit 0
+fi
+
+if [ "$1" == "--logs" ]; then
+  sudo docker logs $CONTAINER_NAME
+  exit 0
+fi
 
 # Check if the --status flag is provided
 if [ "$1" == "--status" ]; then
@@ -23,16 +36,25 @@ if [ "$1" == "--status" ]; then
     exit 0
 fi
 
-# Check if the container exists
-CONTAINER_EXISTS=$(sudo docker ps -a --format '{{.Names}}' | grep "^${CONTAINER_NAME}$")
+# Remove image?
+if [ "$1" == "--remove" ]; then
+    echo "Original Containers List"
+    sudo docker rm $CONTAINER_NAME
+    echo ""
+    echo "Removed Container List"
+    sudo docker ps -a
+    exit 0
+fi
 
-# Check if the container is running
-CONTAINER_RUNNING=$(sudo docker ps --format '{{.Names}}' | grep "^${CONTAINER_NAME}$")
+
+# Check if the container exists
+CONTAINER_EXISTS=$(sudo docker ps -a | grep "^${CONTAINER_NAME}$")
 
 if [ -z "$CONTAINER_EXISTS" ]; then
     # If the container does not exist, create and run it
     echo "Starting new container..."
-    sudo docker run -d --name $CONTAINER_NAME -p 3000:3000 -p 22:22 asciiteaparty:v1_gitea1-19-0
+    sudo docker run -d --name $CONTAINER_NAME -p 3000:3000 -p 22:22 $imageName:$VersionTag
+
 elif [ -z "$CONTAINER_RUNNING" ]; then
     # If the container exists but is not running, start it
     echo "Starting existing container..."

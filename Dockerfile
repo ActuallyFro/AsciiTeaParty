@@ -30,6 +30,10 @@ COPY custom/app.ini /data/gitea/conf/app.ini
 # Expose Gitea ports
 EXPOSE 22 3000
 
+# Create a non-root user and switch to that user
+RUN adduser -D -u 2000 giteauser
+USER giteauser
+
 # Set entrypoint for Gitea
 ENTRYPOINT ["/usr/local/bin/gitea"]
 CMD ["web"]
