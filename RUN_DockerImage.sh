@@ -129,7 +129,7 @@ if [ -z "$CONTAINER_EXISTS" ]; then
     sudo docker run -d --name $CONTAINER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageName:$VersionTag
 
     #WHAT THE HELL DOCKER...
-    sudo docker exec -d $CONTAINER_NAME --user root chown -R git:git /data
+    sudo docker exec -u root -d $CONTAINER_NAME chown -R git:git /data
     #The /data folder will NOT accept permission changes while the image is being built.
 
 elif [ -z "$CONTAINER_RUNNING" ]; then
