@@ -14,12 +14,17 @@ get_image_id(){
   sudo docker images | grep "$imageName" | grep "$VersionTag" | awk '{print $3}'
 }
 
-# Print help, then quit
 if [ "$1" == "--help" ]; then
-  echo "--list - Shows Docker Images on this machine"
-  echo "--rebuild - Removes the $imageName Docker container"
-  echo "--help - Prints this message"
-  echo "--remove - Removes the $imageName Docker container"
+  echo "Usage: $0 [OPTIONS]"
+  echo ""
+  echo "Options:"
+  echo "  --list            Show Docker Images on this machine"
+  echo "  --rebuild         Remove and rebuild the $imageName:$VersionTag Docker image"
+  echo "  --remove          Remove the $imageName:$VersionTag Docker image"
+  echo "  --help            Print this help message and exit"
+  echo ""
+  echo "Example:"
+  echo "  $0 --list"
   exit 0
 
 # Check if the --list flag is provided

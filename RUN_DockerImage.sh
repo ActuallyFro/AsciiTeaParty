@@ -27,11 +27,18 @@ print_status_running(){
 }
 
 if [ "$1" == "--help" ]; then
-  echo "--logs - Reports running status"
-  echo "--status - Shows logs for a container"
-  echo "--remove - Removes the $CONTAINER_NAME Docker container"
-  echo "--help - Prints this message"
-  echo "--stop - Stops the container"
+  echo "Usage: $0 [OPTIONS]"
+  echo ""
+  echo "Options:"
+  echo "  --logs         Display logs for the $CONTAINER_NAME container"
+  echo "  --status       Show the running status of the $CONTAINER_NAME container"
+  echo "  --remove       Remove the $CONTAINER_NAME Docker container if not running"
+  echo "  --help         Print this help message and exit"
+  echo "  --stop         Stop the $CONTAINER_NAME container if it's running"
+  echo "  --interactive  Start interactive mode"
+  echo ""
+  echo "Example:"
+  echo "  $0 --logs"
   exit 0
 
 elif [ "$1" == "--logs" ]; then
