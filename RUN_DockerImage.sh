@@ -1,10 +1,15 @@
 #!/bin/bash
 
 CONTAINER_NAME="AsciiTeaParty"
+CONTAINER_RUNNER_NAME="AsciiTeaPartyRunner"
 
-imageName="asciiteaparty"
+imageName="atp/asciiteaparty"
 VersionTag="v1_gitea1-19-0"
 
+imageRunnerName="atp/act_runner"
+VersionRunnerTag="v1_gitea1-19-0_0-1-7"
+
+isRunnerBuild="FALSE"
 isInteractive="FALSE"
 isRoot="FALSE"
 
