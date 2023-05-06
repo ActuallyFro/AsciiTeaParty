@@ -1,6 +1,10 @@
 # Use Gitea 1.19.0 as base image
 FROM gitea/gitea:1.19.0
 
+USER root
+RUN mkdir -p /app/gitea && chown -R git:git /app/gitea
+RUN mkdir -p /data/gitea/conf && chown -R git:git /data
+
 # Install dependencies for Asciidoctor, Asciidoctor-PDF, Asciidoctor-Diagram, and PlantUML
 RUN apk add --no-cache \
     ruby \
@@ -23,26 +27,19 @@ RUN wget "https://github.com/plantuml/plantuml/releases/download/v1.2023.6/plant
     echo -e '#!/bin/sh\njava -jar /usr/local/bin/plantuml.jar "$@"' > /usr/local/bin/plantuml && \
     chmod +x /usr/local/bin/plantuml
 
-RUN mkdir -p /data && chown -R git:git /data
-# RUN chown -R git:git /data/gitea/conf/app.ini
-
-#HACK... -_-
-COPY custom/app.ini /data/gitea/conf/app_root.ini
+#Shoutout to: https://mydeveloperplanet.com/2022/10/19/docker-files-and-volumes-permission-denied/
 USER git
-RUN cp /data/gitea/conf/app_root.ini /data/gitea/conf/app.ini
+COPY --chown=git:git custom/app.ini /data/gitea/conf/app.ini
+
 USER root
-#FOR GIGGLES:
-RUN chown -R git:git /data/gitea/conf/app.ini
 
 EXPOSE 22 3000
 
-# USER root
-RUN mkdir -p /app/gitea && chown -R git:git /app/gitea
-
-#USER git
-
 ENTRYPOINT ["/usr/local/bin/gitea"]
 CMD ["web"]
+
+#Does nothing, makes me feel better:
+RUN chown -R git:git /data
 
 #ChatGPT SAYS NO to MySQL!
 # BUT ...
