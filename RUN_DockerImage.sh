@@ -26,6 +26,14 @@ print_status_running(){
 
 }
 
+print_system_containers(){
+    sudo docker ps -a 
+}
+
+print_containers(){
+    print_system_containers | grep "$CONTAINER_NAME"
+}
+
 if [ "$1" == "--help" ]; then
   echo "Usage: $0 [OPTIONS]"
   echo ""
@@ -36,6 +44,8 @@ if [ "$1" == "--help" ]; then
   echo "  --help         Print this help message and exit"
   echo "  --stop         Stop the $CONTAINER_NAME container if it's running"
   echo "  --interactive  Start interactive mode"
+  echo "  --list         Show $CONTAINER_NAME containers on this machine"
+  echo "  --list-all     Show ALL containers on this machine"
   echo ""
   echo "Example:"
   echo "  $0 --logs"
@@ -53,12 +63,20 @@ elif [ "$1" == "--remove" ]; then
     CONTAINER_RUNNING=$(check_status_running)
 
     if [ -z "$CONTAINER_RUNNING" ]; then
-        echo "Container ($CONTAINER_NAME) is not running... removing"
-        echo "Original Containers List"
+        echo "Container ($CONTAINER_NAME) is not running..."
+
+        CONTAINER_EXISTS=$(check_status_exists)
+        if [ -z "$CONTAINER_EXISTS" ]; then
+            echo "Container ($CONTAINER_NAME) does not exist... halting"
+            exit 0
+        fi
+        echo "Trying to remove container ($CONTAINER_NAME)"
+        echo "$CONTAINER_NAME Containers List"
+        print_containers
         sudo docker rm $CONTAINER_NAME
         echo ""
-        echo "Removed Container List"
-        sudo docker ps -a
+        echo "System Container List:"
+        print_system_containers
     else
         echo "Container ($CONTAINER_NAME) is running. NOT REMOVING! --stop first!"
     fi
@@ -80,6 +98,15 @@ elif [ "$1" == "--stop" ]; then
 elif [ "$1" == "--interactive" ]; then
     echo "[DEBUG] Starting interactive mode"
     isInteractive="TRUE"
+
+elif [ "$1" == "--list" ]; then
+    print_containers
+    exit 0
+
+
+elif [ "$1" == "--list-all" ]; then
+    print_system_containers
+    exit 0
 
 else
     echo "[ERROR] Unknown flag '$1'"
@@ -112,3 +139,6 @@ if [ "$isInteractive" == "TRUE" ]; then
     sudo docker exec -it $CONTAINER_NAME /bin/bash
 fi
 
+#Run with data volume on host, idea:
+#mkdir gitea-data
+#docker run -d -p 222:22 -p 3000:3000 -v ./gitea-data:/app/gitea/data --name $CONTAINER_NAME $imageName:$VersionTag
