@@ -19,6 +19,7 @@ if [ "$1" == "--help" ]; then
   echo "--list - Shows Docker Images on this machine"
   echo "--rebuild - Removes the $imageName Docker container"
   echo "--help - Prints this message"
+  echo "--remove - Removes the $imageName Docker container"
   exit 0
 
 # Check if the --list flag is provided
@@ -31,6 +32,10 @@ elif [ "$1" == "--rebuild" ]; then
   # imageID=$(get_image_id)
   # sudo docker rm $imageID
   sudo docker rmi $imageName:$VersionTag
+
+elif [ "$1" == "--remove" ]; then
+  sudo docker rmi $imageName:$VersionTag
+  exit 0
 
 elif [ "$1" != "" ]; then
   echo "[ERROR] Unknown flag '$1'"
