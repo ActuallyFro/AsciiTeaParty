@@ -23,13 +23,21 @@ RUN wget "https://github.com/plantuml/plantuml/releases/download/v1.2023.6/plant
     echo -e '#!/bin/sh\njava -jar /usr/local/bin/plantuml.jar "$@"' > /usr/local/bin/plantuml && \
     chmod +x /usr/local/bin/plantuml
 
-COPY custom/app.ini /data/gitea/conf/app.ini
+RUN mkdir -p /data && chown -R git:git /data
+# RUN chown -R git:git /data/gitea/conf/app.ini
+
+#HACK... -_-
+COPY custom/app.ini /data/gitea/conf/app_root.ini
+USER git
+RUN cp /data/gitea/conf/app_root.ini /data/gitea/conf/app.ini
+USER root
+#FOR GIGGLES:
+RUN chown -R git:git /data/gitea/conf/app.ini
 
 EXPOSE 22 3000
 
 # USER root
 RUN mkdir -p /app/gitea && chown -R git:git /app/gitea
-RUN mkdir -p /data && chown -R git:git /data
 
 #USER git
 
