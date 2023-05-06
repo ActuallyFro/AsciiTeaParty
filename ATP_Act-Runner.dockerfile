@@ -3,10 +3,11 @@
 FROM gitea/act_runner:0.1.7
 
 ENV GITEA_INSTANCE_URL http://127.0.0.1:3000
-ENV GITEA_RUNNER_REGISTRATION_TOKEN hLPi41NhM1DYTe9hCaqsZCBVFzw1WuQ0zox5BtVw 
+ENV GITEA_RUNNER_REGISTRATION_TOKEN q7kEro5d1J7R8NMj167o4G8AjY2JRduJNY5rLV0k 
 
 USER root
-RUN mkdir -p /data/gitea/conf && chown -R git:git /data
+# RUN mkdir -p /data/gitea/conf && chown -R git:git /data
+RUN mkdir -p /data/gitea/conf
 
 # Install dependencies for Asciidoctor, Asciidoctor-PDF, Asciidoctor-Diagram, and PlantUML
 RUN apk add --no-cache \
@@ -19,7 +20,8 @@ RUN apk add --no-cache \
     openjdk11-jre \
     graphviz \
     ttf-dejavu \
-    wget
+    wget \
+    curl
 
 RUN gem install --no-document asciidoctor asciidoctor-pdf asciidoctor-diagram
 
@@ -33,7 +35,7 @@ RUN wget "https://github.com/plantuml/plantuml/releases/download/v1.2023.6/plant
 RUN curl https://gitea.com/gitea/act_runner/releases/download/v0.1.7/act_runner-0.1.7-linux-amd64 -o /data/act_runner_0-1-7 && chmod +x /data/act_runner_0-1-7
 
 #Does nothing, makes me feel better:
-RUN chown -R git:git /data
+# RUN chown -R git:git /data
 
 # FROM: https://gitea.com/gitea/act_runner/releases
 
