@@ -1,17 +1,20 @@
 #!/bin/bash
 
 CONTAINER_NAME="AsciiTeaParty"
-CONTAINER_RUNNER_NAME="AsciiTeaPartyRunner"
+CONTAINER_RUNNER_NAME="ATPRunner"
 
 imageName="atp/asciiteaparty"
 VersionTag="v1_gitea1-19-0"
 
 imageRunnerName="atp/act_runner"
 VersionRunnerTag="v1_gitea1-19-0_0-1-7"
+GiteaInstance="http://127.0.0.1:3000"
+GiteaRunnerToken="sMrXNAu6HsqZ6UnLckJ76F1og2qU7AkijpG8uCW5"
 
 isRunnerBuild="FALSE"
 isInteractive="FALSE"
 isRoot="FALSE"
+isRunnerRegister="FALSE"
 
 check_status_running() {
     sudo docker ps | grep "$CONTAINER_NAME"
@@ -41,6 +44,17 @@ print_status_running(){
 
 }
 
+print_status_runner_running(){
+    CONTAINER_RUNNING=$(check_status_runner_running)
+
+    if [ -z "$CONTAINER_RUNNING" ]; then
+        echo "Container ($CONTAINER_RUNNER_NAME) is not running."
+    else
+        echo "Container ($CONTAINER_RUNNER_NAME) is running."
+    fi
+
+}
+
 print_system_containers(){
     sudo docker ps -a 
 }
@@ -59,10 +73,17 @@ if [ "$1" == "--help" ]; then
   echo "  --help              Print this help message and exit"
   echo "  --stop              Stop the $CONTAINER_NAME container if it's running"
   echo "  --interactive       Start interactive mode"
-  echo "  --interactive-root  Start interactive mode"
+  echo "  --interactive-root  Start interactive mode as root"
   echo "  --list              Show $CONTAINER_NAME containers on this machine"
   echo "  --list-all          Show ALL containers on this machine"
+  echo ""
+  echo "  --stop-runner       Stop the $CONTAINER_RUNNER_NAME container if it's running"
+  echo "  --logs-runner       Display logs for the $CONTAINER_NAME container"
+  echo "  --status-runner     Show the running status of the $CONTAINER_RUNNER_NAME container"
+  echo "  --remove-runner     Remove the $CONTAINER_RUNNER_NAME Docker container if not running"
+  echo "  --interact-runner   Start interactive mode for the runner"
   echo "  --runner            Start the $CONTAINER_RUNNER_NAME container"
+  echo "  --runner-register   Register the $CONTAINER_RUNNER_NAME to the $CONTAINER_NAME"
   echo ""
   echo "Example:"
   echo "  $0 --logs"
@@ -72,8 +93,16 @@ elif [ "$1" == "--logs" ]; then
   sudo docker logs $CONTAINER_NAME
   exit 0
 
+elif [ "$1" == "--logs-runner" ]; then
+    sudo docker logs $CONTAINER_RUNNER_NAME
+    exit 0
+
 elif [ "$1" == "--status" ]; then
     print_status_running
+    exit 0
+
+elif [ "$1" == "--status-runner" ]; then
+    print_status_runner_running
     exit 0
 
 elif [ "$1" == "--remove" ]; then
@@ -97,7 +126,29 @@ elif [ "$1" == "--remove" ]; then
     else
         echo "Container ($CONTAINER_NAME) is running. NOT REMOVING! --stop first!"
     fi
-    
+    exit 0
+
+elif [ "$1" == "--remove-runner" ]; then
+    CONTAINER_RUNNER_RUNNING=$(check_status_runner_running)
+
+    if [ -z "$CONTAINER_RUNNER_RUNNING" ]; then
+        echo "Container ($CONTAINER_RUNNER_NAME) is not running..."
+
+        CONTAINER_EXISTS=$(check_status_runner_exists)
+        if [ -z "$CONTAINER_EXISTS" ]; then
+            echo "Container ($CONTAINER_RUNNER_NAME) does not exist... halting"
+            exit 0
+        fi
+        echo "Trying to remove container ($CONTAINER_RUNNER_NAME)"
+        echo "$CONTAINER_RUNNER_NAME Containers List"
+        print_containers
+        sudo docker rm $CONTAINER_RUNNER_NAME
+        echo ""
+        echo "System Container List:"
+        print_system_containers
+    else
+        echo "Container ($CONTAINER_RUNNER_NAME) is running. NOT REMOVING! --stop first!"
+    fi
     exit 0
 
 elif [ "$1" == "--stop" ]; then
@@ -112,14 +163,33 @@ elif [ "$1" == "--stop" ]; then
     fi
     exit 0
 
+elif [ "$1" == "--stop-runner" ]; then
+    CONTAINER_RUNNER_RUNNING=$(check_status_runner_running)
+
+    if [ -z "$CONTAINER_RUNNER_RUNNING" ]; then
+        echo "Container ($CONTAINER_RUNNER_NAME) is not running."
+    else
+        echo "Container ($CONTAINER_RUNNER_NAME) is running...stopping"
+        sudo docker stop $CONTAINER_RUNNER_NAME > /dev/null
+        print_status_runner_running
+    fi
+    exit 0
+
 elif [ "$1" == "--interactive" ]; then
     echo "[DEBUG] Starting interactive mode"
     isInteractive="TRUE"
 
-elif [ "$1" == "--interactive-root" ]; then
-    echo "[DEBUG] Starting interactive mode"
+elif [ "$1" == "--interact-runner" ]; then
+    echo "[DEBUG] Starting interactive mode for runner"
     isInteractive="TRUE"
-    isRoot="TRUE"
+    #The 0.1.7 image ONLY HAS root (and nobody)
+    isRoot="TRUE" 
+    isRunnerBuild="TRUE"
+
+# elif [ "$1" == "--interactive-root" ]; then
+#     echo "[DEBUG] Starting interactive mode"
+#     isInteractive="TRUE"
+#     isRoot="TRUE"
 
 elif [ "$1" == "--list" ]; then
     print_containers
@@ -132,6 +202,15 @@ elif [ "$1" == "--list-all" ]; then
 elif [ "$1" == "--runner" ]; then
     echo "Starting Gitea runner!"
     isRunnerBuild="TRUE"
+    #The 0.1.7 image ONLY HAS root (and nobody)
+    isRoot="TRUE"
+
+elif [ "$1" == "--runner-register" ]; then
+    echo "Registering Gitea runner!"
+    isRunnerBuild="TRUE"
+    isRunnerRegister="TRUE"
+    #The 0.1.7 image ONLY HAS root (and nobody)
+    isRoot="TRUE"
 
 else
     if [ ! -z "$1" ]; then
@@ -178,31 +257,40 @@ if [ "$isRunnerBuild" == "FALSE" ]; then
     fi
 else
     if [ -z "$CONTAINER_RUNNER_EXISTS" ]; then
-        echo "Starting new container..."
-
-        sudo docker run -d --name $CONTAINER_RUNNER_NAME --user 1000:1000 -p 3000:3000 -p 222:22 $imageRunnerName:$VersionRunnerTag
-
-        #WHAT THE HELL DOCKER...
-        sudo docker exec -u root -d $CONTAINER_RUNNER_NAME chown -R git:git /data
-        #The /data folder will NOT accept permission changes while the image is being built.
+        echo "Starting new container..."   
+        sudo docker run -e GITEA_INSTANCE_URL=$GiteaInstance -e GITEA_RUNNER_REGISTRATION_TOKEN=$GiteaRunnerToken -v /var/run/docker.sock:/var/run/docker.sock -d --name $CONTAINER_RUNNER_NAME $imageRunnerName:$VersionRunnerTag
 
     elif [ -z "$CONTAINER_RUNNER_RUNNING" ]; then
+        if [ "$isRunnerRegister" == "TRUE" ]; then
+            echo "HALTING register -- start the runner!"
+            exit 0
+        fi
+
         echo "Starting existing container..."
 
-        sudo docker start $CONTAINER_RUNNER_NAME > /dev/null
+        sudo docker start $CONTAINER_RUNNER_NAME -v /var/run/docker.sock:/var/run/docker.sock > /dev/null
         print_status_running
+        sudo docker logs $CONTAINER_RUNNER_NAME     
 
     else
         if [ "$isInteractive" == "FALSE" ]; then
             echo "Container is already running."
+
+            if [ "$isRunnerRegister" == "TRUE" ]; then
+                echo "Registering runner..."
+                echo "Running: sudo docker exec -u root -d $CONTAINER_RUNNER_NAME /usr/local/bin/act_runner register --no-interactive --instance $GiteaInstance --token $GiteaRunnerToken"
+
+                sudo docker exec -u root -d $CONTAINER_RUNNER_NAME /usr/local/bin/act_runner register --no-interactive --instance $GiteaInstance --token $GiteaRunnerToken
+            fi
         fi
+
     fi
 
     if [ "$isInteractive" == "TRUE" ]; then
         if [ "$isRoot" == "TRUE" ]; then
             sudo docker exec -it --user root $CONTAINER_RUNNER_NAME /bin/bash
-        else
-            sudo docker exec -it $CONTAINER_RUNNER_NAME /bin/bash
+        # else
+        #     sudo docker exec -it $CONTAINER_RUNNER_NAME /bin/bash
         fi
     fi
 fi
