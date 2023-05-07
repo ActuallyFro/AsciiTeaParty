@@ -32,7 +32,8 @@ RUN wget "https://github.com/plantuml/plantuml/releases/download/v1.2023.6/plant
     echo -e '#!/bin/sh\njava -jar /usr/local/bin/plantuml.jar "$@"' > /usr/local/bin/plantuml && \
     chmod +x /usr/local/bin/plantuml
 
-RUN curl https://gitea.com/gitea/act_runner/releases/download/v0.1.7/act_runner-0.1.7-linux-amd64 -o /data/act_runner_0-1-7 && chmod +x /data/act_runner_0-1-7
+#Runner is in /usr/local/bin/act_runner
+# RUN curl https://gitea.com/gitea/act_runner/releases/download/v0.1.7/act_runner-0.1.7-linux-amd64 -o /data/act_runner_0-1-7 && chmod +x /data/act_runner_0-1-7
 
 #Does nothing, makes me feel better:
 # RUN chown -R git:git /data
