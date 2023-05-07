@@ -8,13 +8,14 @@ VersionTag="v1_gitea1-19-0"
 
 imageRunnerName="atp/act_runner"
 VersionRunnerTag="v1_gitea1-19-0_0-1-7"
-GiteaInstance="http://127.0.0.1:3000"
-GiteaRunnerToken="sMrXNAu6HsqZ6UnLckJ76F1og2qU7AkijpG8uCW5"
+GiteaInstance="http://172.17.0.2:3000"
+GiteaRunnerToken="sKYsGhOkzWiGp2HPAakAx7qCFUCCe521YOHWBFOl"
 
 isRunnerBuild="FALSE"
 isInteractive="FALSE"
 isRoot="FALSE"
 isRunnerRegister="FALSE"
+isRunnerDaemonStart="FALSE"
 
 check_status_running() {
     sudo docker ps | grep "$CONTAINER_NAME"
@@ -84,6 +85,7 @@ if [ "$1" == "--help" ]; then
   echo "  --interact-runner   Start interactive mode for the runner"
   echo "  --runner            Start the $CONTAINER_RUNNER_NAME container"
   echo "  --runner-register   Register the $CONTAINER_RUNNER_NAME to the $CONTAINER_NAME"
+  echo "  --runner-daemon     Load the $CONTAINER_RUNNER_NAME's runner daemon"
   echo ""
   echo "Example:"
   echo "  $0 --logs"
@@ -212,6 +214,17 @@ elif [ "$1" == "--runner-register" ]; then
     #The 0.1.7 image ONLY HAS root (and nobody)
     isRoot="TRUE"
 
+elif [ "$1" == "--runner-daemon" ]; then
+    echo "Starting Gitea runner daemon!"
+    isRunnerBuild="TRUE"
+    isRunnerDaemon="TRUE"
+    #The 0.1.7 image ONLY HAS root (and nobody)
+    isRoot="TRUE"
+
+elif [ "$1" == "--help" ]; then
+    print_help
+    exit 0
+
 else
     if [ ! -z "$1" ]; then
         echo "[ERROR] Unknown flag '$1'"
@@ -268,7 +281,7 @@ else
 
         echo "Starting existing container..."
 
-        sudo docker start $CONTAINER_RUNNER_NAME -v /var/run/docker.sock:/var/run/docker.sock > /dev/null
+        sudo docker start $CONTAINER_RUNNER_NAME > /dev/null
         print_status_running
         sudo docker logs $CONTAINER_RUNNER_NAME     
 
@@ -281,6 +294,13 @@ else
                 echo "Running: sudo docker exec -u root -d $CONTAINER_RUNNER_NAME /usr/local/bin/act_runner register --no-interactive --instance $GiteaInstance --token $GiteaRunnerToken"
 
                 sudo docker exec -u root -d $CONTAINER_RUNNER_NAME /usr/local/bin/act_runner register --no-interactive --instance $GiteaInstance --token $GiteaRunnerToken
+            
+            elif [ "$isRunnerDaemon" == "TRUE" ]; then
+                echo "Starting runner daemon..."
+                echo "Running: sudo docker exec -u root -d $CONTAINER_RUNNER_NAME /usr/local/bin/act_runner daemon"
+
+                sudo docker exec -u root -d $CONTAINER_RUNNER_NAME /usr/local/bin/act_runner daemon
+
             fi
         fi
 
